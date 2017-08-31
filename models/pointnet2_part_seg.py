@@ -6,7 +6,7 @@ sys.path.append(os.path.join(BASE_DIR, '../utils'))
 import tensorflow as tf
 import numpy as np
 import tf_util
-from pointnet_util import sample_and_group, pointnet_sa_module, pointnet_fp_module
+from pointnet_util import pointnet_sa_module, pointnet_fp_module
 
 def placeholder_inputs(batch_size, num_point):
     pointclouds_pl = tf.placeholder(tf.float32, shape=(batch_size, num_point, 6))
@@ -15,7 +15,7 @@ def placeholder_inputs(batch_size, num_point):
 
 
 def get_model(point_cloud, is_training, bn_decay=None):
-    """ Segmentation PointNet, input is BxNx6 (XYZ NormalX NormalY NormalZ), output Bx50 """
+    """ Part segmentation PointNet, input is BxNx6 (XYZ NormalX NormalY NormalZ), output Bx50 """
     batch_size = point_cloud.get_shape()[0].value
     num_point = point_cloud.get_shape()[1].value
     end_points = {}
@@ -41,7 +41,7 @@ def get_model(point_cloud, is_training, bn_decay=None):
     return net, end_points
 
 
-def get_loss(pred, label, end_points, reg_weight=0.001):
+def get_loss(pred, label):
     """ pred: BxNxC,
         label: BxN, """
     loss = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=pred, labels=label)

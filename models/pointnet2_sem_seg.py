@@ -6,7 +6,7 @@ sys.path.append(os.path.join(BASE_DIR, '../utils'))
 import tensorflow as tf
 import numpy as np
 import tf_util
-from pointnet_util import sample_and_group, pointnet_sa_module, pointnet_fp_module
+from pointnet_util import pointnet_sa_module, pointnet_fp_module
 
 def placeholder_inputs(batch_size, num_point):
     pointclouds_pl = tf.placeholder(tf.float32, shape=(batch_size, num_point, 3))
@@ -16,7 +16,7 @@ def placeholder_inputs(batch_size, num_point):
 
 
 def get_model(point_cloud, is_training, num_class, bn_decay=None):
-    """ Classification PointNet, input is BxNx3, output Bx40 """
+    """ Semantic segmentation PointNet, input is BxNx3, output Bxnum_class """
     batch_size = point_cloud.get_shape()[0].value
     num_point = point_cloud.get_shape()[1].value
     end_points = {}
@@ -45,7 +45,7 @@ def get_model(point_cloud, is_training, num_class, bn_decay=None):
     return net, end_points
 
 
-def get_loss(pred, label, smpw, end_points, reg_weight=0.001):
+def get_loss(pred, label, smpw):
     """ pred: BxNxC,
         label: BxN, 
 	smpw: BxN """
