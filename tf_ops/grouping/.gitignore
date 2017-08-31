@@ -1,0 +1,10 @@
+a.out
+query_ball_point
+query_ball_point_block
+query_ball_point_cuda
+query_ball_point_grid
+tf_grouping_g.cu.o
+tf_grouping_so.so
+selection_sort
+selection_sort_cuda
+selection_sort_const_cuda
