@@ -10,3 +10,6 @@ The TF operators are included under `tf_ops`, you need to compile them (check `t
 TF and pointnet++ utility layers are defined under `utils/tf_util.py` and `utils/pointnet_util.py`
 
 Under `models`, two classification models (SSG and MSG) and SSG models for part and semantic segmentation have been included.
+
+#### Point Cloud Data
+You can get our sampled point clouds of ModelNet40 (XYZ and normal from mesh, 10k points per shape) at this <a href="https://1drv.ms/u/s!ApbTjxa06z9CgQfKl99yUDHL_wHs">OneDrive link</a>.
