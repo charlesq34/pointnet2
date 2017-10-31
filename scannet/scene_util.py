@@ -63,11 +63,11 @@ def virtual_scan(xyz, mode=-1):
   return smpidx
 
 if __name__=='__main__':
-  pc = np.load('/orions4-zfs/projects/ericyi/PointNetV2/Data/Scannet/scannet_dataset/scannet_scenes/scene0015_00.npy')
+  pc = np.load('scannet_dataset/scannet_scenes/scene0015_00.npy')
   print pc.shape
   xyz = pc[:,:3]
   seg = pc[:,7]
   smpidx = virtual_scan(xyz,mode=2)
   xyz = xyz[smpidx,:]
   seg = seg[smpidx]
-  sio.savemat('/orions4-zfs/projects/ericyi/PointNetV2/Code/matlab/tmp3.mat',{'pc':xyz,'seg':seg})
+  sio.savemat('tmp.mat',{'pc':xyz,'seg':seg})
