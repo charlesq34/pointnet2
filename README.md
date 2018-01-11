@@ -1,7 +1,8 @@
 ### PointNet++: *Deep Hierarchical Feature Learning on Point Sets in a Metric Space*
 Created by <a href="http://charlesrqi.com" target="_blank">Charles R. Qi</a>, <a href="http://stanford.edu/~ericyi">Li (Eric) Yi</a>, <a href="http://ai.stanford.edu/~haosu/" target="_blank">Hao Su</a>, <a href="http://geometry.stanford.edu/member/guibas/" target="_blank">Leonidas J. Guibas</a> from Stanford University.
 
-![prediction example](https://github.com/charlesq34/pointnet2/blob/master/doc/teaser.png)
+![prediction example](https://github.com/charlesq34/pointnet2/blob/master/doc/teaser.jpg)
+
 ### Citation
 If you find our work useful in your research, please consider citing:
 
@@ -15,9 +16,7 @@ If you find our work useful in your research, please consider citing:
 ### Introduction
 This is work is based on our NIPS'17 paper. You can find arXiv version of the paper <a href="https://arxiv.org/pdf/1706.02413.pdf">here</a> or check <a href="http://stanford.edu/~rqi/pointnet2">project webpage</a> for a quick overview.
 
-PointNet++ is a follow-up project that builds on and extends <a href="https://github.com/charlesq34/pointnet">PointNet</a>. It's the second-generation/version 2.0 of the PointNet architecture.
-
-PointNet applies to *generic sets* that don't necessarily have a distance metric defined among points. It either transforms features of *individual points* independently or process global features of the *entire point set*. However, in many cases, there are well defined distance metrics such as Euclidean distance for 3D point clouds collected by 3D sensors or geodesic distance for manifolds like isometric shape surfaces -- it'll be desired to respect the localities of those point sets data. Therefore we invent PointNet++ that learns hierarchical features with increasing scales of context, just like that in convolutional neural networks. Besides, we also observe one problem that's very different from conv nets on images -- non-uniform densities in natural point clouds. Thus we further propose special layers that's able to learn how to make use of points in regions with different densities.
+PointNet++ is a follow-up project that builds on and extends <a href="https://github.com/charlesq34/pointnet">PointNet</a>. It's the second-generation/version 2.0 of the PointNet architecture. While PointNet (the v1 model) either transforms features of *individual points* independently or process global features of the *entire point set*, in many cases, there are well defined distance metrics such as Euclidean distance for 3D point clouds collected by 3D sensors or geodesic distance for manifolds like isometric shape surfaces -- it'll be desired to respect the localities of those point sets data. Therefore we invent PointNet++ that learns hierarchical features with increasing scales of context, just like that in convolutional neural networks. Besides, we also observe one problem that's very different from conv nets on images -- non-uniform densities in natural point clouds. Thus we further propose special layers that's able to learn how to make use of points in regions with different densities.
 
 In this repository we release code and data for our PointNet++ classification and segmentation networks as well as a few utility scripts for training, testing and data processing and visualization.
 
