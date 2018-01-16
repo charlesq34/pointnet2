@@ -45,6 +45,8 @@ To train a model to classify point clouds sampled from ModelNet40 shapes:
         cd classification
         python train.py
 
+Note that for the XYZ+normal experiments: (1) 5000 points are used and (2) a further random data dropout augmentation is used during training (see commented line after `augment_batch_data` in `train.py` and (3) the model architecture is updated such that the `nsample=128` in the first two set abstraction levels, which is suited for the larger point density in 5000-point samplings.
+
 #### Object Part Segmentation
 
 To train a model to segment object parts for ShapeNet models:

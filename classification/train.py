@@ -209,6 +209,7 @@ def train_one_epoch(sess, ops, train_writer):
         end_idx = (batch_idx+1) * BATCH_SIZE
         batch_data, batch_label = get_batch(TRAIN_DATASET, train_idxs, start_idx, end_idx)
         aug_data = augment_batch_data(batch_data)
+        #aug_data = provider.random_point_dropout(aug_data)
         feed_dict = {ops['pointclouds_pl']: aug_data,
                      ops['labels_pl']: batch_label,
                      ops['is_training_pl']: is_training,}
