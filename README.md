@@ -24,11 +24,22 @@ In this repository we release code and data for our PointNet++ classification an
 
 Install <a href="https://www.tensorflow.org/install/">TensorFlow</a>. The code is tested under TF1.2 GPU version and Python 2.7 (version 3 should also work) on Ubuntu 14.04. There are also some dependencies for a few Python libraries for data processing and visualizations like `cv2`, `h5py` etc. It's highly recommended that you have access to GPUs.
 
+#### Compile Customized TF Operators
 The TF operators are included under `tf_ops`, you need to compile them (check `tf_xxx_compile.sh` under each ops subfolder) first. Update `nvcc` and `python` path if necessary. The code is tested under TF1.2.0. If you are using earlier version it's possible that you need to remove the `-D_GLIBCXX_USE_CXX11_ABI=0` flag in g++ command in order to compile correctly.
 
+To compile the operators in TF version >=1.4, you need to modify the compile scripts slightly.
+
+First, find Tensorflow include and library paths.
+
+        TF_INC=$(python -c 'import tensorflow as tf; print(tf.sysconfig.get_include())')
+        TF_LIB=$(python -c 'import tensorflow as tf; print(tf.sysconfig.get_lib())')
+        
+Then, add flags of `-I$TF_INC/external/nsync/public -L$TF_LIB -ltensorflow_framework` to the `g++` commands.
+
+#### Visualization tool
 There is also a handy point cloud visualization tool under `utils`, run `sh compile_render_balls_so.sh` to compile it and you can try the demo with `python show3d_balls.py` The original code is from <a href="://github.com/fanhqme/PointSetGeneration">here</a>.
 
-### Point Cloud Data
+### Download Data
 You can get our sampled point clouds of ModelNet40 (XYZ and normal from mesh, 10k points per shape) at this <a href="https://1drv.ms/u/s!ApbTjxa06z9CgQfKl99yUDHL_wHs">OneDrive link</a>. The ShapeNetPart dataset (XYZ, normal and part labels) can be found <a href="https://1drv.ms/u/s!ApbTjxa06z9CgQnl-Qm6KI3Ywbe1">here</a>. Uncompress them to the data folder such that it becomes:
 
         data/modelnet40_normal_resampled
