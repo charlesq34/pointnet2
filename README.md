@@ -37,7 +37,7 @@ First, find Tensorflow include and library paths.
 Then, add flags of `-I$TF_INC/external/nsync/public -L$TF_LIB -ltensorflow_framework` to the `g++` commands.
 
 #### Visualization tool
-There is also a handy point cloud visualization tool under `utils`, run `sh compile_render_balls_so.sh` to compile it and you can try the demo with `python show3d_balls.py` The original code is from <a href="://github.com/fanhqme/PointSetGeneration">here</a>.
+We have provided a handy point cloud visualization tool under `utils`. Run `sh compile_render_balls_so.sh` to compile it and then you can try the demo with `python show3d_balls.py` The original code is from <a href="http://github.com/fanhqme/PointSetGeneration">here</a>.
 
 ### Download Data
 You can get our sampled point clouds of ModelNet40 (XYZ and normal from mesh, 10k points per shape) at this <a href="https://1drv.ms/u/s!ApbTjxa06z9CgQfKl99yUDHL_wHs">OneDrive link</a>. The ShapeNetPart dataset (XYZ, normal and part labels) can be found <a href="https://1drv.ms/u/s!ApbTjxa06z9CgQnl-Qm6KI3Ywbe1">here</a>. Uncompress them to the data folder such that it becomes:
