@@ -29,7 +29,14 @@ The TF operators are included under `tf_ops`, you need to compile them (check `t
 There is also a handy point cloud visualization tool under `utils`, run `sh compile_render_balls_so.sh` to compile it and you can try the demo with `python show3d_balls.py` The original code is from <a href="://github.com/fanhqme/PointSetGeneration">here</a>.
 
 ### Point Cloud Data
-You can get our sampled point clouds of ModelNet40 (XYZ and normal from mesh, 10k points per shape) at this <a href="https://1drv.ms/u/s!ApbTjxa06z9CgQfKl99yUDHL_wHs">OneDrive link</a>. The ShapeNetPart dataset (XYZ, normal and part labels) can be found <a href="https://1drv.ms/u/s!ApbTjxa06z9CgQnl-Qm6KI3Ywbe1">here</a>. Uncompress them to the data folder such that it becomes:
+
+Note: You can skip this step if you simply want to try the basic classification example (based on XYZ coordinates of points). 
+
+To use normal features for classification: You can get our sampled point clouds of ModelNet40 (XYZ and normal from mesh, 10k points per shape) at this <a href="https://1drv.ms/u/s!ApbTjxa06z9CgQfKl99yUDHL_wHs">OneDrive link</a>.
+
+For object part segmetnation: You can get processed ShapeNetPart dataset (XYZ, normal and part labels) can be found <a href="https://1drv.ms/u/s!ApbTjxa06z9CgQnl-Qm6KI3Ywbe1">here</a>.
+
+After successful downloads, uncompress zip files to the data folder:
 
         data/modelnet40_normal_resampled
         data/shapenetcore_partanno_segmentation_benchmark_v0_normal
@@ -40,12 +47,19 @@ so that training and testing scripts can successfully locate them.
 
 #### Shape Classification
 
-To train a model to classify point clouds sampled from ModelNet40 shapes:
+To train a model to classify point clouds sampled from ModelNet40 shapes using XYZ coordinates:
 
-        cd classification
         python train.py
 
-Note that for the XYZ+normal experiments: (1) 5000 points are used and (2) a further random data dropout augmentation is used during training (see commented line after `augment_batch_data` in `train.py` and (3) the model architecture is updated such that the `nsample=128` in the first two set abstraction levels, which is suited for the larger point density in 5000-point samplings.
+You can type as below to see the optional arguments for training:
+
+        python train.py -h
+
+If you have multiple GPUs on your machine, you can also run the multi-gpu version (similar implementation to the tensorflow cifar10 tutorial):
+
+        python train_multi_gpu.py --num_gpus 2
+ 
+<i>Side Note:</i> For the XYZ+normal experiment reported in our paper: (1) 5000 points are used and (2) a further random data dropout augmentation is used during training (see commented line after `augment_batch_data` in `train.py` and (3) the model architecture is updated such that the `nsample=128` in the first two set abstraction levels, which is suited for the larger point density in 5000-point samplings.
 
 #### Object Part Segmentation
 
@@ -55,12 +69,16 @@ To train a model to segment object parts for ShapeNet models:
         python train.py
 
 #### Scene Parsing
-TBA
+
+See README files and `scannet/train.py` for details.
 
 ### License
 Our code is released under MIT License (see LICENSE file for details).
 
+### Update Log
+2/23/2018: Added support for multi-gpu training for the classification task. No longer require manual data downloading to run `train.py`.
+
 ### Related Projects
 
-* <a href="http://stanford.edu/~rqi/pointnet" target="_blank">PointNet++: Deep Hierarchical Feature Learning on Point Sets in a Metric Space</a> by Qi et al. (CVPR 2017 Oral Presentation). Code and data released in <a href="https://github.com/charlesq34/pointnet">GitHub</a>.
-* <a href="https://arxiv.org/abs/1711.08488" target="_blank">Frustum PointNets for 3D Object Detection from RGB-D Data</a> by Qi et al. (arXiv) A novel framework for 3D object detection with RGB-D data. The method proposed has achieved first place on KITTI 3D object detection benchmark on all categories (last checked on 11/30/2017). Code and data release TBD.
+* <a href="http://stanford.edu/~rqi/pointnet" target="_blank">PointNet: Deep Learning on Point Sets for 3D Classification and Segmentation</a> by Qi et al. (CVPR 2017 Oral Presentation). Code and data released in <a href="https://github.com/charlesq34/pointnet">GitHub</a>.
+* <a href="https://arxiv.org/abs/1711.08488" target="_blank">Frustum PointNets for 3D Object Detection from RGB-D Data</a> by Qi et al. (CVPR 2018) A novel framework for 3D object detection with RGB-D data. Based on 2D boxes from a 2D object detector on RGB images, we extrude the depth maps in 2D boxes to point clouds in 3D space and then realize instance segmentation and 3D bounding box estimation using PointNet/PointNet++. The method proposed has achieved first place on KITTI 3D object detection benchmark on all categories (last checked on 11/30/2017). Code and data release TBD.
