@@ -90,7 +90,7 @@ class ModelNetH5Dataset(object):
             self.current_data, self.current_label, _ = shuffle_data(self.current_data,self.current_label)
     
     def _has_next_batch_in_file(self):
-        return (self.batch_idx+1)*self.batch_size <= self.current_data.shape[0]
+        return self.batch_idx*self.batch_size < self.current_data.shape[0]
 
     def num_channel(self):
         return 3

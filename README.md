@@ -43,7 +43,11 @@ You can type as below to see the optional arguments for training:
 If you have multiple GPUs on your machine, you can also run the multi-gpu version (similar implementation to the tensorflow cifar10 tutorial):
 
         python train_multi_gpu.py --num_gpus 2
- 
+
+After training, we can evaluate the classification results (with optional multi-angle voting).
+
+        python evaluate.py --num_votes 12 
+
 <i>Side Note:</i> For the XYZ+normal experiment reported in our paper: (1) 5000 points are used and (2) a further random data dropout augmentation is used during training (see commented line after `augment_batch_data` in `train.py` and (3) the model architecture is updated such that the `nsample=128` in the first two set abstraction levels, which is suited for the larger point density in 5000-point samplings.
 
 To use normal features for classification: You can get our sampled point clouds of ModelNet40 (XYZ and normal from mesh, 10k points per shape) at this <a href="https://1drv.ms/u/s!ApbTjxa06z9CgQfKl99yUDHL_wHs">OneDrive link</a>. Move the uncompressed data folder to `data/modelnet40_normal_resampled`

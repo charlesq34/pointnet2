@@ -23,11 +23,12 @@ import modelnet_h5_dataset
 parser = argparse.ArgumentParser()
 parser.add_argument('--gpu', type=int, default=0, help='GPU to use [default: GPU 0]')
 parser.add_argument('--model', default='pointnet2_cls_ssg', help='Model name. [default: pointnet2_cls_ssg]')
-parser.add_argument('--batch_size', type=int, default=4, help='Batch Size during training [default: 1]')
+parser.add_argument('--batch_size', type=int, default=16, help='Batch Size during training [default: 16]')
 parser.add_argument('--num_point', type=int, default=1024, help='Point Number [256/512/1024/2048] [default: 1024]')
 parser.add_argument('--model_path', default='log/model.ckpt', help='model checkpoint file path [default: log/model.ckpt]')
 parser.add_argument('--dump_dir', default='dump', help='dump folder path [dump]')
 parser.add_argument('--normal', action='store_true', help='Whether to use normal information')
+parser.add_argument('--num_votes', type=int, default=1, help='Aggregate classification scores from multiple rotations [default: 1]')
 FLAGS = parser.parse_args()
 
 
@@ -73,7 +74,7 @@ def evaluate(num_votes):
         # simple model
         pred, end_points = MODEL.get_model(pointclouds_pl, is_training_pl)
         MODEL.get_loss(pred, labels_pl, end_points)
-        losses = tf.get_collection('losses', scope)
+        losses = tf.get_collection('losses')
         total_loss = tf.add_n(losses, name='total_loss')
         
         # Add ops to save and restore all the variables.
@@ -116,7 +117,7 @@ def eval_one_epoch(sess, ops, num_votes=1, topk=1):
     while TEST_DATASET.has_next_batch():
         batch_data, batch_label = TEST_DATASET.next_batch(augment=False)
         bsize = batch_data.shape[0]
-        print('Batch: %d\t batch_size: %d'%(batch_idx, bsize))
+        print('Batch: %03d, batch size: %d'%(batch_idx, bsize))
         # for the last batch in the epoch, the bsize:end are from last batch
         cur_batch_data[0:bsize,...] = batch_data
         cur_batch_label[0:bsize] = batch_label
@@ -159,5 +160,5 @@ def eval_one_epoch(sess, ops, num_votes=1, topk=1):
 
 if __name__=='__main__':
     with tf.Graph().as_default():
-        evaluate(num_votes=1)
+        evaluate(num_votes=FLAGS.num_votes)
     LOG_FOUT.close()

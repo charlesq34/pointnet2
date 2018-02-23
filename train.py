@@ -120,7 +120,7 @@ def train():
             # Get model and loss 
             pred, end_points = MODEL.get_model(pointclouds_pl, is_training_pl, bn_decay=bn_decay)
             MODEL.get_loss(pred, labels_pl, end_points)
-            losses = tf.get_collection('losses', scope)
+            losses = tf.get_collection('losses')
             total_loss = tf.add_n(losses, name='total_loss')
             tf.summary.scalar('total_loss', total_loss)
             for l in losses + [total_loss]:
