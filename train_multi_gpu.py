@@ -204,7 +204,7 @@ def train():
             
             # Merge pred and losses from multiple GPUs
             pred = tf.concat(pred_gpu, 0)
-            total_loss = tf.reduce_sum(total_loss_gpu)
+            total_loss = tf.reduce_mean(total_loss_gpu)
 
             # Get training operator 
             grads = average_gradients(tower_grads)
