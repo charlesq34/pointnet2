@@ -9,7 +9,7 @@ import numpy as np
 import h5py
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(BASE_DIR)
-ROOT_DIR = os.path.dirname(BASE_DIR)
+ROOT_DIR = BASE_DIR
 sys.path.append(os.path.join(ROOT_DIR, 'utils'))
 import provider
 
@@ -24,7 +24,6 @@ if not os.path.exists(os.path.join(DATA_DIR, 'modelnet40_ply_hdf5_2048')):
     os.system('wget %s; unzip %s' % (www, zipfile))
     os.system('mv %s %s' % (zipfile[:-4], DATA_DIR))
     os.system('rm %s' % (zipfile))
-    os.system('ln -s %s %s'%(DATA_DIR, os.path.join(BASE_DIR, 'data')))
 
 
 def shuffle_data(data, labels):

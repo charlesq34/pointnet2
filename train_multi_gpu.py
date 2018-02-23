@@ -14,7 +14,7 @@ import importlib
 import os
 import sys
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-ROOT_DIR = os.path.dirname(BASE_DIR)
+ROOT_DIR = BASE_DIR
 sys.path.append(BASE_DIR)
 sys.path.append(os.path.join(ROOT_DIR, 'models'))
 sys.path.append(os.path.join(ROOT_DIR, 'utils'))
@@ -36,7 +36,6 @@ parser.add_argument('--optimizer', default='adam', help='adam or momentum [defau
 parser.add_argument('--decay_step', type=int, default=200000, help='Decay step for lr decay [default: 200000]')
 parser.add_argument('--decay_rate', type=float, default=0.7, help='Decay rate for lr decay [default: 0.7]')
 parser.add_argument('--normal', action='store_true', help='Whether to use normal information')
-parser.add_argument('--h5', action='store_true', help='Use H5 dataset (faster 1st epoch and less CPU memeory).')
 FLAGS = parser.parse_args()
 
 EPOCH_CNT = 0
@@ -73,14 +72,15 @@ HOSTNAME = socket.gethostname()
 NUM_CLASSES = 40
 
 # Shapenet official train/test split
-if FLAGS.h5:
-    assert(NUM_POINT<=2048 and FLAGS.normal == False)
-    TRAIN_DATASET = modelnet_h5_dataset.ModelNetH5Dataset(os.path.join(BASE_DIR, 'data/modelnet40_ply_hdf5_2048/train_files.txt'), batch_size=BATCH_SIZE, npoints=NUM_POINT, shuffle=True)
-    TEST_DATASET = modelnet_h5_dataset.ModelNetH5Dataset(os.path.join(BASE_DIR, 'data/modelnet40_ply_hdf5_2048/test_files.txt'), batch_size=BATCH_SIZE, npoints=NUM_POINT, shuffle=False)
-else:
+if FLAGS.normal:
+    assert(NUM_POINT<=10000)
     DATA_PATH = os.path.join(ROOT_DIR, 'data/modelnet40_normal_resampled')
     TRAIN_DATASET = modelnet_dataset.ModelNetDataset(root=DATA_PATH, npoints=NUM_POINT, split='train', normal_channel=FLAGS.normal, batch_size=BATCH_SIZE)
     TEST_DATASET = modelnet_dataset.ModelNetDataset(root=DATA_PATH, npoints=NUM_POINT, split='test', normal_channel=FLAGS.normal, batch_size=BATCH_SIZE)
+else:
+    assert(NUM_POINT<=2048)
+    TRAIN_DATASET = modelnet_h5_dataset.ModelNetH5Dataset(os.path.join(BASE_DIR, 'data/modelnet40_ply_hdf5_2048/train_files.txt'), batch_size=BATCH_SIZE, npoints=NUM_POINT, shuffle=True)
+    TEST_DATASET = modelnet_h5_dataset.ModelNetH5Dataset(os.path.join(BASE_DIR, 'data/modelnet40_ply_hdf5_2048/test_files.txt'), batch_size=BATCH_SIZE, npoints=NUM_POINT, shuffle=False)
 
 def log_string(out_str):
     LOG_FOUT.write(out_str+'\n')
@@ -107,7 +107,6 @@ def average_gradients(tower_grads):
     #for g, _ in grad_and_vars:
     for g, v in grad_and_vars:
       # Add 0 dimension to the gradients to represent the tower.
-      print(g, v)
       expanded_g = tf.expand_dims(g, 0)
 
       # Append on a 'tower' dimension which we will average over below.
@@ -203,11 +202,8 @@ def train():
                         total_loss_gpu.append(total_loss)
             
             # Merge pred and losses from multiple GPUs
-            print(pred_gpu)
             pred = tf.concat(pred_gpu, 0)
             total_loss = tf.reduce_sum(total_loss_gpu)
-            print(pred)
-            print(total_loss)
 
             # Get training operator 
             grads = average_gradients(tower_grads)
@@ -309,7 +305,7 @@ def eval_one_epoch(sess, ops, test_writer):
     is_training = False
 
     # Make sure batch data is of same size
-    cur_batch_data = np.zeros((BATCH_SIZE,NUM_POINT,TRAIN_DATASET.num_channel()))
+    cur_batch_data = np.zeros((BATCH_SIZE,NUM_POINT,TEST_DATASET.num_channel()))
     cur_batch_label = np.zeros((BATCH_SIZE), dtype=np.int32)
 
     total_correct = 0
