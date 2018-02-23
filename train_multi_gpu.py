@@ -1,6 +1,6 @@
 '''
     Multi-GPU training.
-    Nearly linear scale acceleration for multi-gpus on a single machine.
+    Near linear scale acceleration for multi-gpus on a single machine.
     Will use H5 dataset in default. If using normal, will shift to the normal dataset.
 '''
 

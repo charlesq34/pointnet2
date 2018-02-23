@@ -73,8 +73,11 @@ Preprocessed ShapeNetPart dataset (XYZ, normal and part labels) can be found <a 
 
 See `scannet/README` and `scannet/train.py` for details.
 
-#### Visualization tool
+#### Visualization Tools
 We have provided a handy point cloud visualization tool under `utils`. Run `sh compile_render_balls_so.sh` to compile it and then you can try the demo with `python show3d_balls.py` The original code is from <a href="http://github.com/fanhqme/PointSetGeneration">here</a>.
+
+#### Prepare Your Own Data
+You can refer to <a href="https://github.com/charlesq34/3dmodel_feature/blob/master/io/write_hdf5.py">here</a> on how to prepare your own HDF5 files for either classification or segmentation. Or you can refer to `modelnet_dataset.py` on how to read raw data files and prepare mini-batches from them. A more advanced way is to use TensorFlow's dataset APIs, for which you can find more documentations <a href="https://www.tensorflow.org/programmers_guide/datasets">here</a>.
 
 ### License
 Our code is released under MIT License (see LICENSE file for details).
