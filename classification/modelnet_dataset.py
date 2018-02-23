@@ -57,6 +57,21 @@ class ModelNetDataset():
 
         self.reset()
 
+    def _augment_batch_data(self, batch_data):
+        if self.normal_channel:
+            rotated_data = provider.rotate_point_cloud_with_normal(batch_data)
+            rotated_data = provider.rotate_perturbation_point_cloud_with_normal(rotated_data)
+        else:
+            rotated_data = provider.rotate_point_cloud(batch_data)
+            rotated_data = provider.rotate_perturbation_point_cloud(rotated_data)
+    
+        jittered_data = provider.random_scale_point_cloud(rotated_data[:,:,0:3])
+        jittered_data = provider.shift_point_cloud(jittered_data)
+        jittered_data = provider.jitter_point_cloud(jittered_data)
+        rotated_data[:,:,0:3] = jittered_data
+        return rotated_data
+
+
     def _get_item(self, index): 
         if index in self.cache:
             point_set, cls = self.cache[index]
@@ -100,9 +115,8 @@ class ModelNetDataset():
     def next_batch(self, augment=False):
         ''' returned dimension may be smaller than self.batch_size '''
         start_idx = self.batch_idx * self.batch_size
-        end_idx = min((self.batch_idx+1) * self.batch_size,
-            len(self.datapath))
-        bsize = end_idx-start_idx
+        end_idx = min((self.batch_idx+1) * self.batch_size, len(self.datapath))
+        bsize = end_idx - start_idx
         batch_data = np.zeros((bsize, self.npoints, self.num_channel()))
         batch_label = np.zeros((bsize), dtype=np.int32)
         for i in range(bsize):
@@ -113,20 +127,6 @@ class ModelNetDataset():
         if augment: batch_data = self._augment_batch_data(batch_data)
         return batch_data, batch_label
     
-    def _augment_batch_data(self, batch_data):
-        if self.normal_channel:
-            rotated_data = provider.rotate_point_cloud_with_normal(batch_data)
-            rotated_data = provider.rotate_perturbation_point_cloud_with_normal(rotated_data)
-        else:
-            rotated_data = provider.rotate_point_cloud(batch_data)
-            rotated_data = provider.rotate_perturbation_point_cloud(rotated_data)
-    
-        jittered_data = provider.random_scale_point_cloud(rotated_data[:,:,0:3])
-        jittered_data = provider.shift_point_cloud(jittered_data)
-        jittered_data = provider.jitter_point_cloud(jittered_data)
-        rotated_data[:,:,0:3] = jittered_data
-        return rotated_data
-
 if __name__ == '__main__':
     d = ModelNetDataset(root = '../data/modelnet40_normal_resampled', split='test')
     print(d.shuffle)

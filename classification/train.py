@@ -16,6 +16,7 @@ sys.path.append(os.path.join(ROOT_DIR, 'utils'))
 import provider
 import tf_util
 import modelnet_dataset
+import modelnet_h5_dataset
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--gpu', type=int, default=0, help='GPU to use [default: GPU 0]')
@@ -30,6 +31,7 @@ parser.add_argument('--optimizer', default='adam', help='adam or momentum [defau
 parser.add_argument('--decay_step', type=int, default=200000, help='Decay step for lr decay [default: 200000]')
 parser.add_argument('--decay_rate', type=float, default=0.7, help='Decay rate for lr decay [default: 0.7]')
 parser.add_argument('--normal', action='store_true', help='Whether to use normal information')
+parser.add_argument('--h5', action='store_true', help='Use H5 dataset (faster 1st epoch and less CPU memeory).')
 FLAGS = parser.parse_args()
 
 EPOCH_CNT = 0
@@ -63,9 +65,13 @@ HOSTNAME = socket.gethostname()
 NUM_CLASSES = 40
 
 # Shapenet official train/test split
-DATA_PATH = os.path.join(ROOT_DIR, 'data/modelnet40_normal_resampled')
-TRAIN_DATASET = modelnet_dataset.ModelNetDataset(root=DATA_PATH, npoints=NUM_POINT, split='train', normal_channel=FLAGS.normal)
-TEST_DATASET = modelnet_dataset.ModelNetDataset(root=DATA_PATH, npoints=NUM_POINT, split='test', normal_channel=FLAGS.normal)
+if FLAGS.h5:
+    TRAIN_DATASET = modelnet_h5_dataset.ModelNetH5Dataset(os.path.join(BASE_DIR, 'data/modelnet40_ply_hdf5_2048/train_files.txt'), batch_size=BATCH_SIZE, npoints=NUM_POINT, shuffle=True)
+    TEST_DATASET = modelnet_h5_dataset.ModelNetH5Dataset(os.path.join(BASE_DIR, 'data/modelnet40_ply_hdf5_2048/test_files.txt'), batch_size=BATCH_SIZE, npoints=NUM_POINT, shuffle=False)
+else:
+    DATA_PATH = os.path.join(ROOT_DIR, 'data/modelnet40_normal_resampled')
+    TRAIN_DATASET = modelnet_dataset.ModelNetDataset(root=DATA_PATH, npoints=NUM_POINT, split='train', normal_channel=FLAGS.normal, batch_size=BATCH_SIZE)
+    TEST_DATASET = modelnet_dataset.ModelNetDataset(root=DATA_PATH, npoints=NUM_POINT, split='test', normal_channel=FLAGS.normal, batch_size=BATCH_SIZE)
 
 def log_string(out_str):
     LOG_FOUT.write(out_str+'\n')
@@ -165,83 +171,63 @@ def train():
                 save_path = saver.save(sess, os.path.join(LOG_DIR, "model.ckpt"))
                 log_string("Model saved in file: %s" % save_path)
 
-def get_batch(dataset, idxs, start_idx, end_idx):
-    ''' if bsize < BATCH_SIZE, use zero to pad '''
-    bsize = end_idx-start_idx
-    batch_data = np.zeros((BATCH_SIZE, NUM_POINT, dataset.num_channel()))
-    batch_label = np.zeros((BATCH_SIZE), dtype=np.int32)
-    for i in range(bsize):
-        ps,cls = dataset[idxs[i+start_idx]]
-        batch_data[i] = ps
-        batch_label[i] = cls
-    return batch_data, batch_label
-
-def augment_batch_data(batch_data):
-    if FLAGS.normal:
-        rotated_data = provider.rotate_point_cloud_with_normal(batch_data)
-        rotated_data = provider.rotate_perturbation_point_cloud_with_normal(rotated_data)
-    else:
-        rotated_data = provider.rotate_point_cloud(batch_data)
-        rotated_data = provider.rotate_perturbation_point_cloud(rotated_data)
-
-    jittered_data = provider.random_scale_point_cloud(rotated_data[:,:,0:3])
-    jittered_data = provider.shift_point_cloud(jittered_data)
-    jittered_data = provider.jitter_point_cloud(jittered_data)
-    rotated_data[:,:,0:3] = jittered_data
-    return rotated_data
 
 def train_one_epoch(sess, ops, train_writer):
     """ ops: dict mapping from string to tf ops """
     is_training = True
     
-    # Shuffle train samples
-    train_idxs = np.arange(0, len(TRAIN_DATASET))
-    np.random.shuffle(train_idxs)
-    num_batches = len(TRAIN_DATASET)/BATCH_SIZE
-    
     log_string(str(datetime.now()))
+
+    # Make sure batch data is of same size
+    cur_batch_data = np.zeros((BATCH_SIZE,NUM_POINT,TRAIN_DATASET.num_channel()))
+    cur_batch_label = np.zeros((BATCH_SIZE), dtype=np.int32)
 
     total_correct = 0
     total_seen = 0
     loss_sum = 0
-    for batch_idx in range(num_batches):
-        start_idx = batch_idx * BATCH_SIZE
-        end_idx = (batch_idx+1) * BATCH_SIZE
-        batch_data, batch_label = get_batch(TRAIN_DATASET, train_idxs, start_idx, end_idx)
-        aug_data = augment_batch_data(batch_data)
-        #aug_data = provider.random_point_dropout(aug_data)
-        feed_dict = {ops['pointclouds_pl']: aug_data,
-                     ops['labels_pl']: batch_label,
+    batch_idx = 0
+    while TRAIN_DATASET.has_next_batch():
+        batch_data, batch_label = TRAIN_DATASET.next_batch(augment=True)
+        #batch_data = provider.random_point_dropout(batch_data)
+        bsize = batch_data.shape[0]
+        cur_batch_data[0:bsize,...] = batch_data
+        cur_batch_label[0:bsize] = batch_label
+
+        feed_dict = {ops['pointclouds_pl']: cur_batch_data,
+                     ops['labels_pl']: cur_batch_label,
                      ops['is_training_pl']: is_training,}
         summary, step, _, loss_val, pred_val = sess.run([ops['merged'], ops['step'],
             ops['train_op'], ops['loss'], ops['pred']], feed_dict=feed_dict)
         train_writer.add_summary(summary, step)
         pred_val = np.argmax(pred_val, 1)
-        correct = np.sum(pred_val == batch_label)
+        correct = np.sum(pred_val[0:bsize] == batch_label[0:bsize])
         total_correct += correct
-        total_seen += BATCH_SIZE
+        total_seen += bsize
         loss_sum += loss_val
-
         if (batch_idx+1)%50 == 0:
-            log_string(' -- %03d / %03d --' % (batch_idx+1, num_batches))
+            log_string(' ---- %03d ----' % (batch_idx+1))
             log_string('mean loss: %f' % (loss_sum / 50))
             log_string('accuracy: %f' % (total_correct / float(total_seen)))
             total_correct = 0
             total_seen = 0
             loss_sum = 0
-        
+        batch_idx += 1
 
+    TRAIN_DATASET.reset()
         
 def eval_one_epoch(sess, ops, test_writer):
     """ ops: dict mapping from string to tf ops """
     global EPOCH_CNT
     is_training = False
-    test_idxs = np.arange(0, len(TEST_DATASET))
-    num_batches = (len(TEST_DATASET)+BATCH_SIZE-1)/BATCH_SIZE
+
+    # Make sure batch data is of same size
+    cur_batch_data = np.zeros((BATCH_SIZE,NUM_POINT,TRAIN_DATASET.num_channel()))
+    cur_batch_label = np.zeros((BATCH_SIZE), dtype=np.int32)
 
     total_correct = 0
     total_seen = 0
     loss_sum = 0
+    batch_idx = 0
     shape_ious = []
     total_seen_class = [0 for _ in range(NUM_CLASSES)]
     total_correct_class = [0 for _ in range(NUM_CLASSES)]
@@ -249,14 +235,15 @@ def eval_one_epoch(sess, ops, test_writer):
     log_string(str(datetime.now()))
     log_string('---- EPOCH %03d EVALUATION ----'%(EPOCH_CNT))
     
-    for batch_idx in range(num_batches):
-        start_idx = batch_idx * BATCH_SIZE
-        end_idx = min((batch_idx+1) * BATCH_SIZE, len(TEST_DATASET))
-        bsize = end_idx - start_idx
-        batch_data, batch_label = get_batch(TEST_DATASET, test_idxs, start_idx, end_idx)
+    while TEST_DATASET.has_next_batch():
+        batch_data, batch_label = TEST_DATASET.next_batch(augment=False)
+        bsize = batch_data.shape[0]
+        # for the last batch in the epoch, the bsize:end are from last batch
+        cur_batch_data[0:bsize,...] = batch_data
+        cur_batch_label[0:bsize] = batch_label
 
-        feed_dict = {ops['pointclouds_pl']: batch_data,
-                     ops['labels_pl']: batch_label,
+        feed_dict = {ops['pointclouds_pl']: cur_batch_data,
+                     ops['labels_pl']: cur_batch_label,
                      ops['is_training_pl']: is_training}
         summary, step, loss_val, pred_val = sess.run([ops['merged'], ops['step'],
             ops['loss'], ops['pred']], feed_dict=feed_dict)
@@ -265,16 +252,19 @@ def eval_one_epoch(sess, ops, test_writer):
         correct = np.sum(pred_val[0:bsize] == batch_label[0:bsize])
         total_correct += correct
         total_seen += bsize
-        loss_sum += (loss_val*float(bsize/BATCH_SIZE))
-        for i in range(start_idx, end_idx):
-            l = batch_label[i-start_idx]
+        loss_sum += loss_val
+        batch_idx += 1
+        for i in range(0, bsize):
+            l = batch_label[i]
             total_seen_class[l] += 1
-            total_correct_class[l] += (pred_val[i-start_idx] == l)
+            total_correct_class[l] += (pred_val[i] == l)
     
-    log_string('eval mean loss: %f' % (loss_sum / float(num_batches)))
+    log_string('eval mean loss: %f' % (loss_sum / float(batch_idx)))
     log_string('eval accuracy: %f'% (total_correct / float(total_seen)))
     log_string('eval avg class acc: %f' % (np.mean(np.array(total_correct_class)/np.array(total_seen_class,dtype=np.float))))
     EPOCH_CNT += 1
+
+    TEST_DATASET.reset()
     return total_correct/float(total_seen)
 
 

@@ -506,10 +506,9 @@ def batch_norm_template(inputs, is_training, scope, moments_dims, bn_decay):
   Return:
       normed:        batch-normalized maps
   """
-  # For support of GAN
   bn_decay = bn_decay if bn_decay is not None else 0.9
   return tf.contrib.layers.batch_norm(inputs, 
-                                      center=True, scale=True, 
+                                      center=True, scale=True, fused=True,
                                       is_training=is_training, decay=bn_decay,updates_collections=None,
                                       scope=scope)
 
