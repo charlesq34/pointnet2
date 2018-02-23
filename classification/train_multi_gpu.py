@@ -1,6 +1,8 @@
 '''
-    Single-GPU training.
+    Multi-GPU training.
+    Nearly linear scale acceleration for multi-gpus on a single machine.
 '''
+
 import argparse
 import math
 from datetime import datetime
@@ -22,12 +24,12 @@ import modelnet_dataset
 import modelnet_h5_dataset
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--gpu', type=int, default=0, help='GPU to use [default: GPU 0]')
+parser.add_argument('--num_gpus', type=int, default=1, help='How many gpus to use [default: 1]')
 parser.add_argument('--model', default='pointnet2_cls_ssg', help='Model name [default: pointnet2_cls_ssg]')
 parser.add_argument('--log_dir', default='log', help='Log dir [default: log]')
 parser.add_argument('--num_point', type=int, default=1024, help='Point Number [default: 1024]')
 parser.add_argument('--max_epoch', type=int, default=251, help='Epoch to run [default: 251]')
-parser.add_argument('--batch_size', type=int, default=16, help='Batch Size during training [default: 16]')
+parser.add_argument('--batch_size', type=int, default=32, help='Batch Size during training [default: 32]')
 parser.add_argument('--learning_rate', type=float, default=0.001, help='Initial learning rate [default: 0.001]')
 parser.add_argument('--momentum', type=float, default=0.9, help='Initial learning rate [default: 0.9]')
 parser.add_argument('--optimizer', default='adam', help='adam or momentum [default: adam]')
@@ -39,11 +41,14 @@ FLAGS = parser.parse_args()
 
 EPOCH_CNT = 0
 
+NUM_GPUS = FLAGS.num_gpus
 BATCH_SIZE = FLAGS.batch_size
+assert(BATCH_SIZE % NUM_GPUS == 0)
+DEVICE_BATCH_SIZE = BATCH_SIZE / NUM_GPUS
+
 NUM_POINT = FLAGS.num_point
 MAX_EPOCH = FLAGS.max_epoch
 BASE_LEARNING_RATE = FLAGS.learning_rate
-GPU_INDEX = FLAGS.gpu
 MOMENTUM = FLAGS.momentum
 OPTIMIZER = FLAGS.optimizer
 DECAY_STEP = FLAGS.decay_step
@@ -82,6 +87,45 @@ def log_string(out_str):
     LOG_FOUT.flush()
     print(out_str)
 
+def average_gradients(tower_grads):
+  """Calculate the average gradient for each shared variable across all towers.
+  Note that this function provides a synchronization point across all towers.
+  From tensorflow tutorial: cifar10/cifar10_multi_gpu_train.py
+  Args:
+    tower_grads: List of lists of (gradient, variable) tuples. The outer list
+      is over individual gradients. The inner list is over the gradient
+      calculation for each tower.
+  Returns:
+     List of pairs of (gradient, variable) where the gradient has been averaged
+     across all towers.
+  """
+  average_grads = []
+  for grad_and_vars in zip(*tower_grads):
+    # Note that each grad_and_vars looks like the following:
+    #   ((grad0_gpu0, var0_gpu0), ... , (grad0_gpuN, var0_gpuN))
+    grads = []
+    #for g, _ in grad_and_vars:
+    for g, v in grad_and_vars:
+      # Add 0 dimension to the gradients to represent the tower.
+      print(g, v)
+      expanded_g = tf.expand_dims(g, 0)
+
+      # Append on a 'tower' dimension which we will average over below.
+      grads.append(expanded_g)
+
+    # Average over the 'tower' dimension.
+    grad = tf.concat(axis=0, values=grads)
+    grad = tf.reduce_mean(grad, 0)
+
+    # Keep in mind that the Variables are redundant because they are shared
+    # across towers. So .. we will just return the first tower's pointer to
+    # the Variable.
+    v = grad_and_vars[0][1]
+    grad_and_var = (grad, v)
+    average_grads.append(grad_and_var)
+  return average_grads
+
+
 def get_learning_rate(batch):
     learning_rate = tf.train.exponential_decay(
                         BASE_LEARNING_RATE,  # Base learning rate.
@@ -104,7 +148,7 @@ def get_bn_decay(batch):
 
 def train():
     with tf.Graph().as_default():
-        with tf.device('/gpu:'+str(GPU_INDEX)):
+        with tf.device('/cpu:0'):
             pointclouds_pl, labels_pl = MODEL.placeholder_inputs(BATCH_SIZE, NUM_POINT)
             is_training_pl = tf.placeholder(tf.bool, shape=())
             
@@ -116,27 +160,65 @@ def train():
             bn_decay = get_bn_decay(batch)
             tf.summary.scalar('bn_decay', bn_decay)
 
-            # Get model and loss 
-            pred, end_points = MODEL.get_model(pointclouds_pl, is_training_pl, bn_decay=bn_decay)
-            loss = MODEL.get_loss(pred, labels_pl, end_points)
-            tf.summary.scalar('loss', loss)
-
-            correct = tf.equal(tf.argmax(pred, 1), tf.to_int64(labels_pl))
-            accuracy = tf.reduce_sum(tf.cast(correct, tf.float32)) / float(BATCH_SIZE)
-            tf.summary.scalar('accuracy', accuracy)
-
-            print "--- Get training operator"
-            # Get training operator
+            # Set learning rate and optimizer
             learning_rate = get_learning_rate(batch)
             tf.summary.scalar('learning_rate', learning_rate)
             if OPTIMIZER == 'momentum':
                 optimizer = tf.train.MomentumOptimizer(learning_rate, momentum=MOMENTUM)
             elif OPTIMIZER == 'adam':
                 optimizer = tf.train.AdamOptimizer(learning_rate)
-            train_op = optimizer.minimize(loss, global_step=batch)
+
+            # -------------------------------------------
+            # Get model and loss on multiple GPU devices
+            # -------------------------------------------
+            # Allocating variables on CPU first will greatly accelerate multi-gpu training.
+            # Ref: https://github.com/kuza55/keras-extras/issues/21
+            MODEL.get_model(pointclouds_pl, is_training_pl, bn_decay=bn_decay)
             
-            # Add ops to save and restore all the variables.
-            saver = tf.train.Saver()
+            tower_grads = []
+            pred_gpu = []
+            total_loss_gpu = []
+            for i in range(NUM_GPUS):
+                with tf.variable_scope(tf.get_variable_scope(), reuse=True):
+                    with tf.device('/gpu:%d'%(i)), tf.name_scope('gpu_%d'%(i)) as scope:
+                        # Evenly split input data to each GPU
+                        pc_batch = tf.slice(pointclouds_pl,
+                            [i*DEVICE_BATCH_SIZE,0,0], [DEVICE_BATCH_SIZE,-1,-1])
+                        label_batch = tf.slice(labels_pl,
+                            [i*DEVICE_BATCH_SIZE], [DEVICE_BATCH_SIZE])
+
+                        pred, end_points = MODEL.get_model(pc_batch,
+                            is_training=is_training_pl, bn_decay=bn_decay)
+
+                        MODEL.get_loss(pred, label_batch, end_points)
+                        losses = tf.get_collection('losses', scope)
+                        total_loss = tf.add_n(losses, name='total_loss')
+                        for l in losses + [total_loss]:
+                            tf.summary.scalar(l.op.name, l)
+
+                        grads = optimizer.compute_gradients(total_loss)
+                        tower_grads.append(grads)
+
+                        pred_gpu.append(pred)
+                        total_loss_gpu.append(total_loss)
+            
+            # Merge pred and losses from multiple GPUs
+            print(pred_gpu)
+            pred = tf.concat(pred_gpu, 0)
+            total_loss = tf.reduce_sum(total_loss_gpu)
+            print(pred)
+            print(total_loss)
+
+            # Get training operator 
+            grads = average_gradients(tower_grads)
+            train_op = optimizer.apply_gradients(grads, global_step=batch)
+
+            correct = tf.equal(tf.argmax(pred, 1), tf.to_int64(labels_pl))
+            accuracy = tf.reduce_sum(tf.cast(correct, tf.float32)) / float(BATCH_SIZE)
+            tf.summary.scalar('accuracy', accuracy)
+
+        # Add ops to save and restore all the variables.
+        saver = tf.train.Saver()
         
         # Create a session
         config = tf.ConfigProto()
@@ -158,7 +240,7 @@ def train():
                'labels_pl': labels_pl,
                'is_training_pl': is_training_pl,
                'pred': pred,
-               'loss': loss,
+               'loss': total_loss,
                'train_op': train_op,
                'merged': merged,
                'step': batch,
