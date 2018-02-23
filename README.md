@@ -36,26 +36,23 @@ First, find Tensorflow include and library paths.
         
 Then, add flags of `-I$TF_INC/external/nsync/public -L$TF_LIB -ltensorflow_framework` to the `g++` commands.
 
-#### Visualization tool
-We have provided a handy point cloud visualization tool under `utils`. Run `sh compile_render_balls_so.sh` to compile it and then you can try the demo with `python show3d_balls.py` The original code is from <a href="http://github.com/fanhqme/PointSetGeneration">here</a>.
-
 ### Usage
 
 #### Shape Classification
 
-To train a model to classify point clouds sampled from ModelNet40 shapes using XYZ coordinates:
+To train a PointNet++ model to classify ModelNet40 shapes (using point clouds with XYZ coordinates):
 
         python train.py
 
-You can type as below to see the optional arguments for training:
+To see all optional arguments for training:
 
         python train.py -h
 
-If you have multiple GPUs on your machine, you can also run the multi-gpu version (similar implementation to the tensorflow cifar10 tutorial):
+If you have multiple GPUs on your machine, you can also run the multi-GPU version training (our implementation is similar to the tensorflow <a href="https://github.com/tensorflow/models/tree/master/tutorials/image/cifar10">cifar10 tutorial</a>):
 
         python train_multi_gpu.py --num_gpus 2
 
-After training, we can evaluate the classification results (with optional multi-angle voting).
+After training, to evaluate the classification accuracies (with optional multi-angle voting):
 
         python evaluate.py --num_votes 12 
 
@@ -70,17 +67,22 @@ To train a model to segment object parts for ShapeNet models:
         cd part_seg
         python train.py
 
-You can get processed ShapeNetPart dataset (XYZ, normal and part labels) can be found <a href="https://1drv.ms/u/s!ApbTjxa06z9CgQnl-Qm6KI3Ywbe1">here</a>. Move the uncompressed data folder to `data/shapenetcore_partanno_segmentation_benchmark_v0_normal`
+Preprocessed ShapeNetPart dataset (XYZ, normal and part labels) can be found <a href="https://1drv.ms/u/s!ApbTjxa06z9CgQnl-Qm6KI3Ywbe1">here</a>. Move the uncompressed data folder to `data/shapenetcore_partanno_segmentation_benchmark_v0_normal`
 
 #### Semantic Scene Parsing
 
-See README files and `scannet/train.py` for details.
+See `scannet/README` and `scannet/train.py` for details.
+
+#### Visualization tool
+We have provided a handy point cloud visualization tool under `utils`. Run `sh compile_render_balls_so.sh` to compile it and then you can try the demo with `python show3d_balls.py` The original code is from <a href="http://github.com/fanhqme/PointSetGeneration">here</a>.
 
 ### License
 Our code is released under MIT License (see LICENSE file for details).
 
-### Update Log
-2/23/2018: Added support for multi-gpu training for the classification task. No longer require manual data downloading to run `train.py`.
+### Updates
+02/23/2018: Added support for multi-gpu training for the classification task.
+02/23/2018: Adopted a new way for data loading. No longer require manual data downloading to train a classification network.
+02/06/2018: Added sample training code for ScanNet semantic segmentation.
 
 ### Related Projects
 
