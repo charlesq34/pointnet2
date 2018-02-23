@@ -1,5 +1,6 @@
 '''
     Single-GPU training.
+    Will use H5 dataset in default. If using normal, will shift to the normal dataset.
 '''
 import argparse
 import math
@@ -118,8 +119,12 @@ def train():
 
             # Get model and loss 
             pred, end_points = MODEL.get_model(pointclouds_pl, is_training_pl, bn_decay=bn_decay)
-            loss = MODEL.get_loss(pred, labels_pl, end_points)
-            tf.summary.scalar('loss', loss)
+            MODEL.get_loss(pred, labels_pl, end_points)
+            losses = tf.get_collection('losses', scope)
+            total_loss = tf.add_n(losses, name='total_loss')
+            tf.summary.scalar('total_loss', total_loss)
+            for l in losses + [total_loss]:
+                tf.summary.scalar(l.op.name, l)
 
             correct = tf.equal(tf.argmax(pred, 1), tf.to_int64(labels_pl))
             accuracy = tf.reduce_sum(tf.cast(correct, tf.float32)) / float(BATCH_SIZE)
@@ -133,7 +138,7 @@ def train():
                 optimizer = tf.train.MomentumOptimizer(learning_rate, momentum=MOMENTUM)
             elif OPTIMIZER == 'adam':
                 optimizer = tf.train.AdamOptimizer(learning_rate)
-            train_op = optimizer.minimize(loss, global_step=batch)
+            train_op = optimizer.minimize(total_loss, global_step=batch)
             
             # Add ops to save and restore all the variables.
             saver = tf.train.Saver()
@@ -158,7 +163,7 @@ def train():
                'labels_pl': labels_pl,
                'is_training_pl': is_training_pl,
                'pred': pred,
-               'loss': loss,
+               'loss': total_loss,
                'train_op': train_op,
                'merged': merged,
                'step': batch,
@@ -211,7 +216,7 @@ def train_one_epoch(sess, ops, train_writer):
         total_seen += bsize
         loss_sum += loss_val
         if (batch_idx+1)%50 == 0:
-            log_string(' ---- %03d ----' % (batch_idx+1))
+            log_string(' ---- batch: %03d ----' % (batch_idx+1))
             log_string('mean loss: %f' % (loss_sum / 50))
             log_string('accuracy: %f' % (total_correct / float(total_seen)))
             total_correct = 0

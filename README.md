@@ -28,21 +28,6 @@ The TF operators are included under `tf_ops`, you need to compile them (check `t
 
 There is also a handy point cloud visualization tool under `utils`, run `sh compile_render_balls_so.sh` to compile it and you can try the demo with `python show3d_balls.py` The original code is from <a href="://github.com/fanhqme/PointSetGeneration">here</a>.
 
-### Point Cloud Data
-
-Note: You can skip this step if you simply want to try the basic classification example (based on XYZ coordinates of points). 
-
-To use normal features for classification: You can get our sampled point clouds of ModelNet40 (XYZ and normal from mesh, 10k points per shape) at this <a href="https://1drv.ms/u/s!ApbTjxa06z9CgQfKl99yUDHL_wHs">OneDrive link</a>.
-
-For object part segmetnation: You can get processed ShapeNetPart dataset (XYZ, normal and part labels) can be found <a href="https://1drv.ms/u/s!ApbTjxa06z9CgQnl-Qm6KI3Ywbe1">here</a>.
-
-After successful downloads, uncompress zip files to the data folder:
-
-        data/modelnet40_normal_resampled
-        data/shapenetcore_partanno_segmentation_benchmark_v0_normal
-
-so that training and testing scripts can successfully locate them.
-
 ### Usage
 
 #### Shape Classification
@@ -61,6 +46,8 @@ If you have multiple GPUs on your machine, you can also run the multi-gpu versio
  
 <i>Side Note:</i> For the XYZ+normal experiment reported in our paper: (1) 5000 points are used and (2) a further random data dropout augmentation is used during training (see commented line after `augment_batch_data` in `train.py` and (3) the model architecture is updated such that the `nsample=128` in the first two set abstraction levels, which is suited for the larger point density in 5000-point samplings.
 
+To use normal features for classification: You can get our sampled point clouds of ModelNet40 (XYZ and normal from mesh, 10k points per shape) at this <a href="https://1drv.ms/u/s!ApbTjxa06z9CgQfKl99yUDHL_wHs">OneDrive link</a>. Move the uncompressed data folder to `data/modelnet40_normal_resampled`
+
 #### Object Part Segmentation
 
 To train a model to segment object parts for ShapeNet models:
@@ -68,7 +55,9 @@ To train a model to segment object parts for ShapeNet models:
         cd part_seg
         python train.py
 
-#### Scene Parsing
+You can get processed ShapeNetPart dataset (XYZ, normal and part labels) can be found <a href="https://1drv.ms/u/s!ApbTjxa06z9CgQnl-Qm6KI3Ywbe1">here</a>. Move the uncompressed data folder to `data/shapenetcore_partanno_segmentation_benchmark_v0_normal`
+
+#### Semantic Scene Parsing
 
 See README files and `scannet/train.py` for details.
 

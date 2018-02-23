@@ -1,3 +1,7 @@
+'''
+    Evaluate classification performance with optional voting.
+    Will use H5 dataset in default. If using normal, will shift to the normal dataset.
+'''
 import tensorflow as tf
 import numpy as np
 import argparse
@@ -68,7 +72,9 @@ def evaluate(num_votes):
 
         # simple model
         pred, end_points = MODEL.get_model(pointclouds_pl, is_training_pl)
-        loss = MODEL.get_loss(pred, labels_pl, end_points)
+        MODEL.get_loss(pred, labels_pl, end_points)
+        losses = tf.get_collection('losses', scope)
+        total_loss = tf.add_n(losses, name='total_loss')
         
         # Add ops to save and restore all the variables.
         saver = tf.train.Saver()
@@ -88,7 +94,7 @@ def evaluate(num_votes):
            'labels_pl': labels_pl,
            'is_training_pl': is_training_pl,
            'pred': pred,
-           'loss': loss}
+           'loss': total_loss}
 
     eval_one_epoch(sess, ops, num_votes)
 
