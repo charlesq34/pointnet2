@@ -17,7 +17,7 @@ def pc_normalize(pc):
     return pc
 
 class ModelNetDataset():
-    def __init__(self, root, npoints = 1024, split='train', normalize=True, normal_channel=True, modelnet10=False, modelnet30=False):
+    def __init__(self, root, npoints = 1024, split='train', normalize=True, normal_channel=True, modelnet10=False, modelnet30=False, cache_size=15000):
         self.npoints = npoints
         self.root = root
         self.normalize = normalize
@@ -49,7 +49,7 @@ class ModelNetDataset():
         self.datapath = [(shape_names[i], os.path.join(self.root, shape_names[i], shape_ids[split][i])+'.txt') for i in range(len(shape_ids[split]))]
 
         self.cache = {} # from index to (point_set, cls) tuple
-        self.cache_size = 15000
+        self.cache_size = cache_size # how many data points to cache in memory
                
     def __getitem__(self, index):
         if index in self.cache:

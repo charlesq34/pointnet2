@@ -16,8 +16,9 @@ def _variable_on_cpu(name, shape, initializer, use_fp16=False):
   Returns:
     Variable Tensor
   """
-  dtype = tf.float16 if use_fp16 else tf.float32
-  var = tf.get_variable(name, shape, initializer=initializer, dtype=dtype)
+  with tf.device("/cpu:0"):
+    dtype = tf.float16 if use_fp16 else tf.float32
+    var = tf.get_variable(name, shape, initializer=initializer, dtype=dtype)
   return var
 
 def _variable_with_weight_decay(name, shape, stddev, wd, use_xavier=True):
@@ -56,7 +57,7 @@ def conv1d(inputs,
            padding='SAME',
            use_xavier=True,
            stddev=1e-3,
-           weight_decay=0.0,
+           weight_decay=None,
            activation_fn=tf.nn.relu,
            bn=False,
            bn_decay=None,
@@ -116,7 +117,7 @@ def conv2d(inputs,
            padding='SAME',
            use_xavier=True,
            stddev=1e-3,
-           weight_decay=0.0,
+           weight_decay=None,
            activation_fn=tf.nn.relu,
            bn=False,
            bn_decay=None,
@@ -176,7 +177,7 @@ def conv2d_transpose(inputs,
                      padding='SAME',
                      use_xavier=True,
                      stddev=1e-3,
-                     weight_decay=0.0,
+                     weight_decay=None,
                      activation_fn=tf.nn.relu,
                      bn=False,
                      bn_decay=None,
@@ -256,7 +257,7 @@ def conv3d(inputs,
            padding='SAME',
            use_xavier=True,
            stddev=1e-3,
-           weight_decay=0.0,
+           weight_decay=None,
            activation_fn=tf.nn.relu,
            bn=False,
            bn_decay=None,
@@ -312,7 +313,7 @@ def fully_connected(inputs,
                     scope,
                     use_xavier=True,
                     stddev=1e-3,
-                    weight_decay=0.0,
+                    weight_decay=None,
                     activation_fn=tf.nn.relu,
                     bn=False,
                     bn_decay=None,
@@ -448,11 +449,9 @@ def avg_pool3d(inputs,
     return outputs
 
 
-
-
-
-def batch_norm_template(inputs, is_training, scope, moments_dims, bn_decay):
-  """ Batch normalization on convolutional maps and beyond...
+def batch_norm_template_unused(inputs, is_training, scope, moments_dims, bn_decay):
+  """ NOTE: this is older version of the util func. it is deprecated.
+  Batch normalization on convolutional maps and beyond...
   Ref.: http://stackoverflow.com/questions/33949786/how-could-i-use-batch-normalization-in-tensorflow
   
   Args:
@@ -464,18 +463,12 @@ def batch_norm_template(inputs, is_training, scope, moments_dims, bn_decay):
   Return:
       normed:        batch-normalized maps
   """
-  # For support of GAN
-  #bn_decay = bn_decay if bn_decay is not None else 0.9
-  #return tf.contrib.layers.batch_norm(inputs, 
-  #                                    center=True, scale=True, 
-  #                                    is_training=is_training, decay=bn_decay,updates_collections=None,
-  #                                    scope=scope)
   with tf.variable_scope(scope) as sc:
     num_channels = inputs.get_shape()[-1].value
-    beta = tf.Variable(tf.constant(0.0, shape=[num_channels]),
-                       name='beta', trainable=True)
-    gamma = tf.Variable(tf.constant(1.0, shape=[num_channels]),
-                        name='gamma', trainable=True)
+    beta = _variable_on_cpu(name='beta',shape=[num_channels],
+                            initializer=tf.constant_initializer(0))
+    gamma = _variable_on_cpu(name='gamma',shape=[num_channels],
+                            initializer=tf.constant_initializer(1.0))
     batch_mean, batch_var = tf.nn.moments(inputs, moments_dims, name='moments')
     decay = bn_decay if bn_decay is not None else 0.9
     ema = tf.train.ExponentialMovingAverage(decay=decay)
@@ -498,6 +491,28 @@ def batch_norm_template(inputs, is_training, scope, moments_dims, bn_decay):
                         lambda: (ema.average(batch_mean), ema.average(batch_var)))
     normed = tf.nn.batch_normalization(inputs, mean, var, beta, gamma, 1e-3)
   return normed
+
+
+def batch_norm_template(inputs, is_training, scope, moments_dims, bn_decay):
+  """ Batch normalization on convolutional maps and beyond...
+  Ref.: http://stackoverflow.com/questions/33949786/how-could-i-use-batch-normalization-in-tensorflow
+  
+  Args:
+      inputs:        Tensor, k-D input ... x C could be BC or BHWC or BDHWC
+      is_training:   boolean tf.Varialbe, true indicates training phase
+      scope:         string, variable scope
+      moments_dims:  a list of ints, indicating dimensions for moments calculation
+      bn_decay:      float or float tensor variable, controling moving average weight
+  Return:
+      normed:        batch-normalized maps
+  """
+  # For support of GAN
+  bn_decay = bn_decay if bn_decay is not None else 0.9
+  return tf.contrib.layers.batch_norm(inputs, 
+                                      center=True, scale=True, 
+                                      is_training=is_training, decay=bn_decay,updates_collections=None,
+                                      scope=scope)
+
 
 def batch_norm_for_fc(inputs, is_training, bn_decay, scope):
   """ Batch normalization on FC data.
