@@ -81,7 +81,9 @@ Our code is released under MIT License (see LICENSE file for details).
 
 ### Updates
 02/23/2018: Added support for multi-gpu training for the classification task.
+
 02/23/2018: Adopted a new way for data loading. No longer require manual data downloading to train a classification network.
+
 02/06/2018: Added sample training code for ScanNet semantic segmentation.
 
 ### Related Projects
