@@ -55,7 +55,7 @@ class ModelNetH5Dataset(object):
     def __init__(self, list_filename, batch_size = 32, npoints = 1024, shuffle=True):
         self.list_filename = list_filename
         self.batch_size = batch_size
-        self.npoints = 1024
+        self.npoints = npoints
         self.shuffle = shuffle
         self.h5_files = getDataFiles(self.list_filename)
         self.reset()
