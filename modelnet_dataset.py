@@ -69,7 +69,7 @@ class ModelNetDataset():
         jittered_data = provider.shift_point_cloud(jittered_data)
         jittered_data = provider.jitter_point_cloud(jittered_data)
         rotated_data[:,:,0:3] = jittered_data
-        return rotated_data
+        return provider.shuffle_points(rotated_data)
 
 
     def _get_item(self, index): 

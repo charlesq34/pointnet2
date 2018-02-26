@@ -50,7 +50,7 @@ To see all optional arguments for training:
 
 If you have multiple GPUs on your machine, you can also run the multi-GPU version training (our implementation is similar to the tensorflow <a href="https://github.com/tensorflow/models/tree/master/tutorials/image/cifar10">cifar10 tutorial</a>):
 
-        python train_multi_gpu.py --num_gpus 2
+        CUDA_VISIBLE_DEVICES=0,1 python train_multi_gpu.py --num_gpus 2
 
 After training, to evaluate the classification accuracies (with optional multi-angle voting):
 
