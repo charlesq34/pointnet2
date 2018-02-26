@@ -59,16 +59,16 @@ def knn_point(k, xyz1, xyz2):
     n = xyz1.get_shape()[1].value
     c = xyz1.get_shape()[2].value
     m = xyz2.get_shape()[1].value
-    print b, n, c, m
-    print xyz1, (b,1,n,c)
+    print(b, n, c, m)
+    print(xyz1, (b,1,n,c))
     xyz1 = tf.tile(tf.reshape(xyz1, (b,1,n,c)), [1,m,1,1])
     xyz2 = tf.tile(tf.reshape(xyz2, (b,m,1,c)), [1,1,n,1])
     dist = tf.reduce_sum((xyz1-xyz2)**2, -1)
-    print dist, k
+    print(dist, k)
     outi, out = select_top_k(k, dist)
     idx = tf.slice(outi, [0,0,0], [-1,-1,k])
     val = tf.slice(out, [0,0,0], [-1,-1,k])
-    print idx, val
+    print(idx, val)
     #val, idx = tf.nn.top_k(-dist, k=k) # ONLY SUPPORT CPU
     return val, idx
 
@@ -98,8 +98,8 @@ if __name__=='__main__':
         now = time.time() 
         for _ in range(100):
             ret = sess.run(grouped_points)
-        print time.time() - now
-        print ret.shape, ret.dtype
-        print ret
+        print(time.time() - now)
+        print(ret.shape, ret.dtype)
+        print(ret)
     
     

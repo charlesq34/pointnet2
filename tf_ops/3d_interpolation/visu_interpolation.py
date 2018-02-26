@@ -23,7 +23,7 @@ def fun(xyz1,xyz2,pts2):
         dist = tf.maximum(dist, 1e-10)
         norm = tf.reduce_sum((1.0/dist),axis=2,keep_dims=True)
         norm = tf.tile(norm, [1,1,3])
-        print norm
+        print(norm)
         weight = (1.0/dist) / norm
         interpolated_points = three_interpolate(points, idx, weight)
     with tf.Session('') as sess:
