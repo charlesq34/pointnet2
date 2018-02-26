@@ -545,7 +545,7 @@ def batch_norm_for_fc(inputs, is_training, bn_decay, scope):
   return batch_norm_template(inputs, is_training, scope, [0,], bn_decay)
 
 
-def batch_norm_for_conv1d(inputs, is_training, bn_decay, scope, data_format='NHWC'):
+def batch_norm_for_conv1d(inputs, is_training, bn_decay, scope, data_format):
   """ Batch normalization on 1D convolutional maps.
   
   Args:
@@ -562,7 +562,7 @@ def batch_norm_for_conv1d(inputs, is_training, bn_decay, scope, data_format='NHW
 
 
   
-def batch_norm_for_conv2d(inputs, is_training, bn_decay, scope, data_format='NHWC'):
+def batch_norm_for_conv2d(inputs, is_training, bn_decay, scope, data_format):
   """ Batch normalization on 2D convolutional maps.
   
   Args:

@@ -84,7 +84,7 @@ def sample_and_group_all(xyz, points, use_xyz=True):
     return new_xyz, new_points, idx, grouped_xyz
 
 
-def pointnet_sa_module(xyz, points, npoint, radius, nsample, mlp, mlp2, group_all, is_training, bn_decay, scope, bn=True, pooling='max', knn=False, use_xyz=True, use_nchw=True):
+def pointnet_sa_module(xyz, points, npoint, radius, nsample, mlp, mlp2, group_all, is_training, bn_decay, scope, bn=True, pooling='max', knn=False, use_xyz=True, use_nchw=False):
     ''' PointNet Set Abstraction (SA) Module
         Input:
             xyz: (batch_size, ndataset, 3) TF tensor
@@ -153,7 +153,7 @@ def pointnet_sa_module(xyz, points, npoint, radius, nsample, mlp, mlp2, group_al
         new_points = tf.squeeze(new_points, [2]) # (batch_size, npoints, mlp2[-1])
         return new_xyz, new_points, idx
 
-def pointnet_sa_module_msg(xyz, points, npoint, radius_list, nsample_list, mlp_list, is_training, bn_decay, scope, bn=True, use_xyz=True, use_nchw=True):
+def pointnet_sa_module_msg(xyz, points, npoint, radius_list, nsample_list, mlp_list, is_training, bn_decay, scope, bn=True, use_xyz=True, use_nchw=False):
     ''' PointNet Set Abstraction (SA) module with Multi-Scale Grouping (MSG)
         Input:
             xyz: (batch_size, ndataset, 3) TF tensor
