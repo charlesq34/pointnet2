@@ -2,6 +2,7 @@ import tensorflow as tf
 from tensorflow.python.framework import ops
 import sys
 import os
+from __future__ import print_function
 BASE_DIR = os.path.dirname(__file__)
 sys.path.append(BASE_DIR)
 interpolate_module=tf.load_op_library(os.path.join(BASE_DIR, 'tf_interpolate_so.so'))

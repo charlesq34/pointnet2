@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 from tf_grouping import query_ball_point, group_point
+from __future__ import print_function
 
 class GroupPointTest(tf.test.TestCase):
   def test(self):

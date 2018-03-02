@@ -7,6 +7,7 @@ import tensorflow as tf
 import numpy as np
 import tf_util
 from pointnet_util import pointnet_sa_module, pointnet_fp_module
+from __future__ import print_function
 
 def placeholder_inputs(batch_size, num_point):
     pointclouds_pl = tf.placeholder(tf.float32, shape=(batch_size, num_point, 6))

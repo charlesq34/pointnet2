@@ -7,6 +7,7 @@ from show3d_balls import showpoints
 import numpy as np
 from tf_interpolate import three_nn, three_interpolate
 import tensorflow as tf
+from __future__ import print_function
 
 
 pts2 = np.array([[0,0,1],[1,0,0],[0,1,0],[1,1,0]]).astype('float32')

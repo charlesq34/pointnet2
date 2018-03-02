@@ -7,6 +7,7 @@ import tensorflow as tf
 from tensorflow.python.framework import ops
 import sys
 import os
+from __future__ import print_function
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(BASE_DIR)
 sampling_module=tf.load_op_library(os.path.join(BASE_DIR, 'tf_sampling_so.so'))
