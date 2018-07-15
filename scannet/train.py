@@ -9,15 +9,13 @@ import importlib
 import os
 import sys
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-ROOT_DIR = os.path.dirname(os.path.dirname(BASE_DIR))
+ROOT_DIR = os.path.dirname(BASE_DIR)
 sys.path.append(BASE_DIR) # model
 sys.path.append(ROOT_DIR) # provider
 sys.path.append(os.path.join(ROOT_DIR, 'utils'))
 import provider
 import tf_util
 import pc_util
-sys.path.append(os.path.join(ROOT_DIR, 'unit_test'))
-import unit_test 
 sys.path.append(os.path.join(ROOT_DIR, 'data_prep'))
 import scannet_dataset
 
@@ -113,7 +111,7 @@ def train():
             print "--- Get model and loss"
             # Get model and loss 
             pred, end_points = MODEL.get_model(pointclouds_pl, is_training_pl, NUM_CLASSES, bn_decay=bn_decay)
-            loss = MODEL.get_loss(pred, labels_pl, smpws_pl, end_points)
+            loss = MODEL.get_loss(pred, labels_pl, smpws_pl)
             tf.summary.scalar('loss', loss)
 
             correct = tf.equal(tf.argmax(pred, 2), tf.to_int64(labels_pl))
