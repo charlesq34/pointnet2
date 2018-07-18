@@ -138,9 +138,10 @@ def rotate_point_cloud_by_angle(batch_data, rotation_angle):
 def rotate_point_cloud_by_angle_with_normal(batch_data, rotation_angle):
     """ Rotate the point cloud along up direction with certain angle.
         Input:
-          BxNx3 array, original batch of point clouds
+          BxNx6 array, original batch of point clouds with normal
+          scalar, angle of rotation
         Return:
-          BxNx3 array, rotated batch of point clouds
+          BxNx6 array, rotated batch of point clouds iwth normal
     """
     rotated_data = np.zeros(batch_data.shape, dtype=np.float32)
     for k in xrange(batch_data.shape[0]):
@@ -150,9 +151,9 @@ def rotate_point_cloud_by_angle_with_normal(batch_data, rotation_angle):
         rotation_matrix = np.array([[cosval, 0, sinval],
                                     [0, 1, 0],
                                     [-sinval, 0, cosval]])
-        shape_pc = batch_data[k, ...]
+        shape_pc = batch_data[k,:,0:3]
         shape_normal = batch_data[k,:,3:6]
-        rotated_data[k, ...] = np.dot(shape_pc.reshape((-1, 3)), rotation_matrix)
+        rotated_data[k,:,0:3] = np.dot(shape_pc.reshape((-1, 3)), rotation_matrix)
         rotated_data[k,:,3:6] = np.dot(shape_normal.reshape((-1,3)), rotation_matrix)
     return rotated_data
 
