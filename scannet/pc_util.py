@@ -209,6 +209,32 @@ def read_ply(filename):
     pc_array = np.array([[x, y, z] for x,y,z in pc])
     return pc_array
 
+def read_ply_xyz(filename):
+    """ read XYZ point cloud from filename PLY file """
+    assert(os.path.isfile(filename))
+    with open(filename, 'rb') as f:
+        plydata = PlyData.read(f)
+        num_verts = plydata['vertex'].count
+        vertices = np.zeros(shape=[num_verts, 3], dtype=np.float32)
+        vertices[:,0] = plydata['vertex'].data['x']
+        vertices[:,1] = plydata['vertex'].data['y']
+        vertices[:,2] = plydata['vertex'].data['z']
+    return vertices
+
+def read_ply_xyzrgb(filename):
+    """ read XYZRGB point cloud from filename PLY file """
+    assert(os.path.isfile(filename))
+    with open(filename, 'rb') as f:
+        plydata = PlyData.read(f)
+        num_verts = plydata['vertex'].count
+        vertices = np.zeros(shape=[num_verts, 6], dtype=np.float32)
+        vertices[:,0] = plydata['vertex'].data['x']
+        vertices[:,1] = plydata['vertex'].data['y']
+        vertices[:,2] = plydata['vertex'].data['z']
+        vertices[:,3] = plydata['vertex'].data['red']
+        vertices[:,4] = plydata['vertex'].data['green']
+        vertices[:,5] = plydata['vertex'].data['blue']
+    return vertices
 
 def write_ply(points, filename, text=True):
     """ input: Nx3, write points to filename as PLY format. """
@@ -339,5 +365,15 @@ def write_ply_color(points, labels, out_filename, num_classes=None):
     for i in range(N):
         c = colors[labels[i]]
         c = [int(x*255) for x in c]
+        fout.write('v %f %f %f %d %d %d\n' % (points[i,0],points[i,1],points[i,2],c[0],c[1],c[2]))
+    fout.close()
+
+def write_ply_rgb(points, colors, out_filename, num_classes=None):
+    """ Color (N,3) points with RGB colors (N,3) within range [0,255] as OBJ file """
+    colors = colors.astype(int)
+    N = points.shape[0]
+    fout = open(out_filename, 'w')
+    for i in range(N):
+        c = colors[i,:]
         fout.write('v %f %f %f %d %d %d\n' % (points[i,0],points[i,1],points[i,2],c[0],c[1],c[2]))
     fout.close()
