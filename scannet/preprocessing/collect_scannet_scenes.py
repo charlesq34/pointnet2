@@ -33,7 +33,7 @@ def collect_one_scene_data_label(scene_name, out_filename):
     
     # Raw points in XYZRGBA
     ply_filename = os.path.join(data_folder, '%s_vh_clean_2.ply' % (scene_name))
-    points = pc_util.read_ply_rgba(ply_filename)
+    points = pc_util.read_ply_xyzrgb(ply_filename)
     log_string(str(points.shape))
     
     # Instances over-segmented segment IDs: annotation on segments
