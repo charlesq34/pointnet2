@@ -56,9 +56,14 @@ After training, to evaluate the classification accuracies (with optional multi-a
 
         python evaluate.py --num_votes 12 
 
+After training, to predict class of a single object (with optional multi-angle voting and visualization):
+
+        python predict_cls.py --path path_to_pointcloud.txt --num_votes 12 -v 
+
 <i>Side Note:</i> For the XYZ+normal experiment reported in our paper: (1) 5000 points are used and (2) a further random data dropout augmentation is used during training (see commented line after `augment_batch_data` in `train.py` and (3) the model architecture is updated such that the `nsample=128` in the first two set abstraction levels, which is suited for the larger point density in 5000-point samplings.
 
 To use normal features for classification: You can get our sampled point clouds of ModelNet40 (XYZ and normal from mesh, 10k points per shape) <a href="https://shapenet.cs.stanford.edu/media/modelnet40_normal_resampled.zip">here (1.6GB)</a>. Move the uncompressed data folder to `data/modelnet40_normal_resampled`
+
 
 #### Object Part Segmentation
 
