@@ -4,6 +4,8 @@ import ctypes as ct
 import cv2
 import sys
 import os
+from pprint import pprint
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 showsz=800
 mousex,mousey=0.5,0.5
@@ -103,9 +105,9 @@ def showpoints(xyz,c_gt=None, c_pred = None ,waittime=0,showrot=False,magnifyBlu
             changed=False
         cv2.imshow('show3d',show)
         if waittime==0:
-            cmd=cv2.waitKey(10)%256
+            cmd=cv2.waitKey(10) % 256
         else:
-            cmd=cv2.waitKey(waittime)%256
+            cmd=cv2.waitKey(waittime) % 256
         if cmd==ord('q'):
             break
         elif cmd==ord('Q'):
@@ -157,5 +159,20 @@ def showpoints(xyz,c_gt=None, c_pred = None ,waittime=0,showrot=False,magnifyBlu
     return cmd
 if __name__=='__main__':
     np.random.seed(100)
-    showpoints(np.random.randn(2500,3))
+    if len(sys.argv) < 2:
+        exit('Enter pointcloud path')
+    path = sys.argv[1]
+
+    point_set = np.loadtxt(path ,delimiter=',').astype(np.float32)
+    random_idx = np.random.randint(point_set.shape[0], size=1024)
+    print(point_set.shape)
+    point_set = point_set[0:1024,0:3]
+
+    #point_set = point_set[random_idx,0:3]
+    #pprint(point_set)
+    #pprint(np.random.randn(2500,3))
+
+    #showpoints(np.random.randn(2500,3))
+    showpoints(point_set)
+
 
